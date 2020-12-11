@@ -146,3 +146,5 @@ func StartEngine() error {
 	}
 	return nil
 }
+// Thêm một số chức năng có thể chuyển hướng các dữ liệu gửi đến chỗ khác, hoặc đưa ra các giải pháp xóa bỏ chặn
+// Các chức năng cơ bản theo dõi ghi log những truy cập

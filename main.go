@@ -47,7 +47,36 @@ func StartEngine() error {
 	if err != nil {
 		return fmt.Errorf("FwpmEngineOpen0,%v", err)
 	}
+	}
 
+	err := gowindows.FwpmEngineClose0(&engineHandle)
+	if err != nil {
+		return fmt.Errorf("FwpmEngineClose0,%v", err)
+	}
+	}
+
+	err := gowindows.FwpmSubLayerAdd0(&engineHandle, subLayer *FwpmSublayer0, sd PSecurityDescriptor)
+	if err != nil {
+		return fmt.Errorf("FwpmSubLayerAdd0,%v", err)
+	}
+	}
+
+	err := gowindows.FwpmSubLayerDeleteByKey0("&engineHandle,  key *GUID)
+	if err != nil {
+		return fmt.Errorf("FwpmSubLayerDeleteByKey0,%v", err)
+	}
+	}
+
+	err := gowindows.FwpmGetAppIdFromFileName0(fileName string, appId **FwpByteBlob)
+	if err != nil {
+		return fmt.Errorf("FwpmGetAppIdFromFileName0,%v", err)
+	}
+						  	}
+
+	err := gowindows.FwpmFreeMemory0(p *windows.Pointer)
+	if err != nil {
+		return fmt.Errorf("FwpmFreeMemory0,%v", err)
+	}
 	subLayer := gowindows.FwpmSublayer0{}
 	subLayer.DisplayData.Name = windows.StringToUTF16Ptr(FIREWALL_SUBLAYER_NAMEW)
 	subLayer.DisplayData.Description = windows.StringToUTF16Ptr(FIREWALL_SUBLAYER_NAMEW)

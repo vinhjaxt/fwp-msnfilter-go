@@ -89,5 +89,11 @@ func StartEngine() error {
 	}
 
 	log.Println("Đã mở lại kết nối ra ở cổng 80")
+
+	time.Sleep(6 * time.Second)
+	err = gowindows.FwpmEngineClose0(engineHandle)
+	if err != nil {
+		return err
+	}
 	return nil
 }

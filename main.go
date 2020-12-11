@@ -47,36 +47,42 @@ func StartEngine() error {
 	if err != nil {
 		return fmt.Errorf("FwpmEngineOpen0,%v", err)
 	}
+	// Mở phiên làm việc hiện tại
 	}
 
 	err := gowindows.FwpmEngineClose0(&engineHandle)
 	if err != nil {
 		return fmt.Errorf("FwpmEngineClose0,%v", err)
 	}
+	// Đóng phiên làm việc hiện tại
 	}
 
 	err := gowindows.FwpmSubLayerAdd0(&engineHandle, subLayer *FwpmSublayer0, sd PSecurityDescriptor)
 	if err != nil {
 		return fmt.Errorf("FwpmSubLayerAdd0,%v", err)
 	}
+	// Thêm các layer con https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmsublayeradd0
 	}
 
 	err := gowindows.FwpmSubLayerDeleteByKey0("&engineHandle,  key *GUID)
 	if err != nil {
 		return fmt.Errorf("FwpmSubLayerDeleteByKey0,%v", err)
 	}
+	// Xóa layer con https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmsublayerdeletebykey0
 	}
 
 	err := gowindows.FwpmGetAppIdFromFileName0(fileName string, appId **FwpByteBlob)
 	if err != nil {
 		return fmt.Errorf("FwpmGetAppIdFromFileName0,%v", err)
 	}
-						  	}
+	// truy xuất mã nhận dạng ứng dụng https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmgetappidfromfilename0
+	}
 
 	err := gowindows.FwpmFreeMemory0(p *windows.Pointer)
 	if err != nil {
 		return fmt.Errorf("FwpmFreeMemory0,%v", err)
 	}
+	// Giải phóng tài nguyên bộ nhớ https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmfreememory0
 	subLayer := gowindows.FwpmSublayer0{}
 	subLayer.DisplayData.Name = windows.StringToUTF16Ptr(FIREWALL_SUBLAYER_NAMEW)
 	subLayer.DisplayData.Description = windows.StringToUTF16Ptr(FIREWALL_SUBLAYER_NAMEW)
@@ -108,6 +114,8 @@ func StartEngine() error {
 	condition[0].ConditionValue.Type = gowindows.FWP_UINT16
 	// Chặn kết nối ra tới cổng 80
 	condition[0].ConditionValue.SetUint16(80)
+	// Chặn kết nối HTTPS
+	condition[1].ConditionValue.SetUint16(443)					  
 
 	// Chặn tất cả các yêu cầu IPv4
 	filter.Action.Type = gowindows.FWP_ACTION_BLOCK // FWP_ACTION_PERMIT
@@ -121,7 +129,7 @@ func StartEngine() error {
 		return fmt.Errorf("ipv4-FwpmFilterAdd0, %v", err)
 	}
 
-	log.Println("Đang chặn kết nối ra ở cổng 80 trong 6s")
+	log.Println("Đang chặn kết nối ra ở cổng 80 & 443 trong 6s")
 	time.Sleep(6 * time.Second)
 
 	err = gowindows.FwpmFilterDeleteById0(engineHandle, filterId)
@@ -129,7 +137,7 @@ func StartEngine() error {
 		return fmt.Errorf("FwpmFilterDeleteById0, %v", err)
 	}
 
-	log.Println("Đã mở lại kết nối ra ở cổng 80")
+	log.Println("Đã mở lại kết nối ra ở cổng 80 & 443")
 
 	time.Sleep(6 * time.Second)
 	err = gowindows.FwpmEngineClose0(engineHandle)

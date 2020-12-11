@@ -10,6 +10,18 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var (
+	fwpuclnt                  = windows.NewLazyDLL("Fwpuclnt.dll")
+	fwpmEngineOpen0           = fwpuclnt.NewProc("FwpmEngineOpen0")
+	fwpmEngineClose0          = fwpuclnt.NewProc("FwpmEngineClose0")
+	fwpmSubLayerAdd0          = fwpuclnt.NewProc("FwpmSubLayerAdd0")
+	fwpmSubLayerDeleteByKey0  = fwpuclnt.NewProc("FwpmSubLayerDeleteByKey0")
+	fwpmGetAppIdFromFileName0 = fwpuclnt.NewProc("FwpmGetAppIdFromFileName0")
+	fwpmFreeMemory0           = fwpuclnt.NewProc("FwpmFreeMemory0")
+	fwpmFilterAdd0            = fwpuclnt.NewProc("FwpmFilterAdd0")
+	fwpmFilterDeleteById0     = fwpuclnt.NewProc("FwpmFilterDeleteById0")
+)
+
 const FIREWALL_SUBLAYER_NAMEW = "MyFWP1"
 const FIREWALL_SERVICE_NAMEW = "MyFWP1.1"
 

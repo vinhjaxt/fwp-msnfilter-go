@@ -3,11 +3,13 @@
 package main
 
 import (
-	"fmt"
-	"math"
-	"unsafe"
+	"bytes"
+	"encoding/binary"
 	"log"
+	"net"
+	"reflect"
 	"time"
+	"unsafe"
 
 	"golang.org/x/sys/windows"
 
@@ -15,84 +17,70 @@ import (
 	win "./winsys"
 )
 
-func startEngine() error {
+func ip2Long(ip string) uint32 {
+	var long uint32
+	binary.Read(bytes.NewBuffer(net.ParseIP(ip).To4()), binary.BigEndian, &long)
+	return long
+}
+
+func loop() {
 	// Open the engine with a session.
 	var engine uintptr
 	session := &win.FWPM_SESSION0{Flags: win.FWPM_SESSION_FLAG_DYNAMIC}
-	err := win.FwpmEngineOpen0(nil, win.RPC_C_AUTHN_DEFAULT, nil, session, unsafe.Pointer(&engine))
+	err := win.FwpmEngineOpen0(nil, win.RPC_C_AUTHN_WINNT, nil, session, unsafe.Pointer(&engine))
 	if err != nil {
-		return fmt.Errorf("failed to open engine: %v", err)
+		log.Panicln("0", err)
 	}
 
-	// Add a sublayer.
-	key, err := windows.GenerateGUID()
-	if err != nil {
-		return fmt.Errorf("failed to generate GUID: %v", err)
-	}
-	displayData, err := win.CreateDisplayData("Mellow", "Sublayer")
-	if err != nil {
-		return fmt.Errorf("failed to create display data: %v", err)
-	}
-	sublayer := win.FWPM_SUBLAYER0{}
-	sublayer.SubLayerKey = key
-	sublayer.DisplayData = *displayData
-	sublayer.Weight = math.MaxUint16
-	err = win.FwpmSubLayerAdd0(engine, &sublayer, 0)
-	if err != nil {
-		return fmt.Errorf("failed to add sublayer: %v", err)
-	}
+	enumTmpl := win.FWPM_NET_EVENT_ENUM_TEMPLATE0{}
+	windows.GetSystemTimeAsFileTime(&enumTmpl.EndTime)
+	log.Println(time.Unix(enumTmpl.EndTime.Nanoseconds()/1000000000, 0))
+	enumTmpl.StartTime = windows.NsecToFiletime(enumTmpl.EndTime.Nanoseconds() - 6000000000000)
 
-	files := []string{`C:\Windows\System32\curl.exe`, `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`}
-	for _, file := range files {
-		_, err := addFilter(file, engine, key)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-
-	return nil
-}
-
-func addFilter(file string, engine uintptr, key windows.GUID) (filterId uint64, err error) {
-
-	// Allow all IPv4 traffic from the current process i.e. Mellow.
-	appID, err := win.GetAppIdFromFileName(file)
-	if err != nil {
-		return
-	}
-	defer win.FwpmFreeMemory0(unsafe.Pointer(&appID))
-	// Block all TCP traffic targeting port 80.
-	conditions := make([]win.FWPM_FILTER_CONDITION0, 2)
-	conditions[0].FieldKey = win.FWPM_CONDITION_ALE_APP_ID
+	conditions := make([]win.FWPM_FILTER_CONDITION0, 1)
+	conditions[0].FieldKey = win.FWPM_CONDITION_IP_REMOTE_ADDRESS
 	conditions[0].MatchType = win.FWP_MATCH_EQUAL
-	conditions[0].ConditionValue.Type = win.FWP_BYTE_BLOB_TYPE
-	conditions[0].ConditionValue.Value = uintptr(unsafe.Pointer(appID))
+	conditions[0].ConditionValue.Type = win.FWP_UINT32
+	ip := ip2Long("69.171.250.12")
+	conditions[0].ConditionValue.Value = uintptr(ip)
+	enumTmpl.FilterCondition = (*win.FWPM_FILTER_CONDITION0)(unsafe.Pointer(&conditions[0]))
+	enumTmpl.NumFilterConditions = 1
 
-	conditions[1].FieldKey = win.FWPM_CONDITION_IP_REMOTE_PORT
-	conditions[1].MatchType = win.FWP_MATCH_EQUAL
-	conditions[1].ConditionValue.Type = win.FWP_UINT16
-	conditions[1].ConditionValue.Value = uintptr(uint16(80))
-	myFilterDisplayData, err := win.CreateDisplayData("Mellow", "Block all TCP traffic targeting port 80")
+	var enumHandle uintptr
+	err = win.FwpmNetEventCreateEnumHandle0(engine, &enumTmpl, unsafe.Pointer(&enumHandle))
 	if err != nil {
-		return
+		log.Panicln("Error: May be admin can", err)
 	}
-	myFilter := win.FWPM_FILTER0{}
-	myFilter.FilterCondition = (*win.FWPM_FILTER_CONDITION0)(unsafe.Pointer(&conditions[0]))
-	myFilter.NumFilterConditions = uint32(len(conditions))
-	myFilter.DisplayData = *myFilterDisplayData
-	myFilter.SubLayerKey = key
-	myFilter.LayerKey = win.FWPM_LAYER_ALE_AUTH_CONNECT_V4
-	myFilter.Action.Type = win.FWP_ACTION_BLOCK
-	myFilter.Weight.Type = win.FWP_UINT8
-	myFilter.Weight.Value = uintptr(10)
-	err = win.FwpmFilterAdd0(engine, &myFilter, 0, &filterId)
+	var numEvents uint32
+	var netEventPtr uintptr
+	err = win.FwpmNetEventEnum3(engine, enumHandle, windows.INFINITE, &netEventPtr, &numEvents)
 	if err != nil {
-		return
+		log.Panicln("2", err)
 	}
-	return 
+	log.Println("Num events:", numEvents)
+	defer win.FwpmNetEventDestroyEnumHandle0(engine, enumHandle)
+	netEvents := *(*[]*win.FWPM_NET_EVENT3)(unsafe.Pointer(&reflect.SliceHeader{
+		Data: netEventPtr,
+		Len:  int(numEvents),
+		Cap:  int(numEvents),
+	}))
+
+	for _, netEvent := range netEvents {
+		log.Println("Time:", time.Unix(netEvent.Header.TimeStamp.Nanoseconds()/1000000000, 0))
+		if netEvent.Header.IPVersion == win.FWP_IP_VERSION_V4 {
+			log.Println(net.IPv4(netEvent.Header.LocalAddr[6], netEvent.Header.LocalAddr[5], netEvent.Header.LocalAddr[4], netEvent.Header.LocalAddr[3]),
+				"=>",
+				net.IPv4(netEvent.Header.RemoteAddr[6], netEvent.Header.RemoteAddr[5], netEvent.Header.RemoteAddr[4], netEvent.Header.RemoteAddr[3]))
+		} else {
+			log.Println(netEvent.Header.LocalAddr, "=>", netEvent.Header.RemoteAddr)
+		}
+		log.Println(netEvent.Header.LocalPort, "=>", netEvent.Header.RemotePort)
+	}
 }
 
-func main()  {
-	log.Println(startEngine())
-	time.Sleep(time.Hour)
+func main() {
+	for {
+		loop()
+		time.Sleep(time.Second)
+	}
 }

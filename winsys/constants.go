@@ -40,6 +40,7 @@ const (
 
 const (
 	RPC_C_AUTHN_DEFAULT       uint32 = 0xFFFFFFFF
+	RPC_C_AUTHN_WINNT         uint32 = 10
 	FWPM_SESSION_FLAG_DYNAMIC uint32 = 0x00000001
 )
 
@@ -101,6 +102,21 @@ var FWPM_CONDITION_IP_REMOTE_PORT = windows.GUID{
 	Data2: 0xd22b,
 	Data3: 0x4e1a,
 	Data4: [8]byte{0x91, 0xb4, 0x68, 0xf6, 0x74, 0xee, 0x67, 0x4b},
+}
+
+// 0c1ba1af-5765-453f-af22-a8f791ac775b
+var FWPM_CONDITION_IP_LOCAL_PORT = windows.GUID{
+	0x0c1ba1af,
+	0x5765,
+	0x453f,
+	[8]byte{0xaf, 0x22, 0xa8, 0xf7, 0x91, 0xac, 0x77, 0x5b},
+}
+
+var FWPM_CONDITION_IP_REMOTE_ADDRESS = windows.GUID{
+	0xb235ae9a,
+	0x1d64,
+	0x49b8,
+	[8]byte{0xa4, 0x4c, 0x5f, 0xf3, 0xd9, 0x09, 0x50, 0x45},
 }
 
 var FWPM_LAYER_ALE_AUTH_CONNECT_V4 = windows.GUID{

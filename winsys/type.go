@@ -260,6 +260,21 @@ const (
 	UDP_TABLE_OWNER_MODULE
 )
 
+type FWPM_NET_EVENT_CLASS uintptr
+
+const (
+	FWPM_NET_EVENT_IKEEXT_MM_FAILURE1 FWPM_NET_EVENT_CLASS = iota
+	FWPM_NET_EVENT_IKEEXT_QM_FAILURE0
+	FWPM_NET_EVENT_IKEEXT_EM_FAILURE1
+	FWPM_NET_EVENT_CLASSIFY_DROP2
+	FWPM_NET_EVENT_IPSEC_KERNEL_DROP0
+	FWPM_NET_EVENT_IPSEC_DOSP_DROP0
+	FWPM_NET_EVENT_CLASSIFY_ALLOW0
+	FWPM_NET_EVENT_CAPABILITY_DROP0
+	FWPM_NET_EVENT_CAPABILITY_ALLOW0
+	FWPM_NET_EVENT_CLASSIFY_DROP_MAC0
+)
+
 type ModuleEntry32 struct {
 	Size         uint32
 	ModuleID     uint32
@@ -351,6 +366,73 @@ type FWPM_SESSION0 struct {
 	Sid                  *windows.SID
 	Username             *uint16
 	KernelMode           int32
+}
+
+type FWPM_NET_EVENT_ENUM_TEMPLATE0 struct {
+	StartTime           windows.Filetime
+	EndTime             windows.Filetime
+	NumFilterConditions uint32
+	FilterCondition     *FWPM_FILTER_CONDITION0
+}
+
+type FWPM_NET_EVENT_TYPE DWORD
+
+const (
+	FWPM_NET_EVENT_TYPE_IKEEXT_MM_FAILURE FWPM_NET_EVENT_TYPE = iota
+	FWPM_NET_EVENT_TYPE_IKEEXT_QM_FAILURE
+	FWPM_NET_EVENT_TYPE_IKEEXT_EM_FAILURE
+	FWPM_NET_EVENT_TYPE_CLASSIFY_DROP
+	FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP
+	FWPM_NET_EVENT_TYPE_IPSEC_DOSP_DROP
+	FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW
+	FWPM_NET_EVENT_TYPE_CAPABILITY_DROP
+	FWPM_NET_EVENT_TYPE_CAPABILITY_ALLOW
+	FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC
+	FWPM_NET_EVENT_TYPE_LPM_PACKET_ARRIVAL
+	FWPM_NET_EVENT_TYPE_MAX
+)
+
+type FWPM_NET_EVENT3 struct {
+	Header  FWPM_NET_EVENT_HEADER3
+	Type    FWPM_NET_EVENT_TYPE
+	ErrType FWPM_NET_EVENT_CLASS
+}
+
+type FWP_IP_VERSION DWORD
+
+const (
+	FWP_IP_VERSION_V4 FWP_IP_VERSION = iota
+	FWP_IP_VERSION_V6
+	FWP_IP_VERSION_NONE
+	FWP_IP_VERSION_MAX
+)
+
+type FWP_AF int
+
+const (
+	FWP_AF_INET FWP_AF = iota
+	FWP_AF_INET6
+	FWP_AF_ETHER
+	FWP_AF_NONE
+)
+
+type FWPM_NET_EVENT_HEADER3 struct {
+	TimeStamp     windows.Filetime
+	Flags         uint32
+	IPVersion     FWP_IP_VERSION
+	IPProtocol    uint8
+	LocalAddr     [16]byte
+	RemoteAddr    [16]byte
+	LocalPort     uint16
+	RemotePort    uint16
+	ScopeId       uint32
+	AppId         FWP_BYTE_BLOB
+	UserId        *windows.SID
+	AddressFamily FWP_AF
+	PackageSid    *windows.SID
+	EnterpriseId  uintptr
+	PolicyFlags   uint64
+	EffectiveName FWP_BYTE_BLOB
 }
 
 type FWP_BYTE_BLOB struct {

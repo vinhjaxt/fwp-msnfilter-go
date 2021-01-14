@@ -22,3 +22,12 @@ const InvalidHandle = ^Handle(0)
 //sys	FwpmFreeMemory0(p unsafe.Pointer) = fwpuclnt.FwpmFreeMemory0
 
 //sys   Module32First(snapshot Handle, moduleEntry *ModuleEntry32) (err error) = kernel32.Module32FirstW
+
+// https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmneteventcreateenumhandle0
+//sys   FwpmNetEventCreateEnumHandle0(engineHandle uintptr, enumTemplate *FWPM_NET_EVENT_ENUM_TEMPLATE0, enumHandle unsafe.Pointer) (err error) [failretval!=0] = fwpuclnt.FwpmNetEventCreateEnumHandle0
+
+// https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmneteventenum3
+//sys   FwpmNetEventEnum3(engineHandle uintptr, enumHandle uintptr, numEntriesRequested uint32, entries *uintptr, numEntriesReturned *uint32) (err error) [failretval!=0] = fwpuclnt.FwpmNetEventEnum3
+
+// https://docs.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-FwpmNetEventDestroyEnumHandle0
+//sys   FwpmNetEventDestroyEnumHandle0(engineHandle uintptr, enumHandle uintptr) (err error) [failretval!=0] = fwpuclnt.FwpmNetEventDestroyEnumHandle0
